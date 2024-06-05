@@ -1,0 +1,20 @@
+<Project>
+    <Sdk Name="OpinionPak.Sdk" Version="0.1.0-alpha.3" />
+
+    <PropertyGroup>
+        <UseArtifactsOutput>true</UseArtifactsOutput>
+        <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <RepositoryUrl>https://github.com/js6pak/libclang.resources</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <NanoVer>false</NanoVer>
+        <GenerateFileHeaderEditorConfig>false</GenerateFileHeaderEditorConfig>
+    </PropertyGroup>
+
+    <Import Project="$(MSBuildThisFileFullPath).user" Condition="Exists('$(MSBuildThisFileFullPath).user')" />
+</Project>

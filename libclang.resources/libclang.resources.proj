@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.Build.NoTargets">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <IsPackable>true</IsPackable>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+
+        <PackageId>js6pak.$(MSBuildProjectName)</PackageId>
+
+        <ClangVersion>18.1.3</ClangVersion>
+        <VersionRevision>0</VersionRevision>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <ClangVersionMajor>$([System.Version]::Parse('$(ClangVersion)').Major)</ClangVersionMajor>
+        <Version>$(ClangVersion).$(VersionRevision)</Version>
+
+        <LlvmSourceRoot>$([MSBuild]::EnsureTrailingSlash('$(LlvmSourceRoot)'))</LlvmSourceRoot>
+        <ClangLicensePath>$(LlvmSourceRoot)clang/LICENSE.TXT</ClangLicensePath>
+        <ClangResourceDirectoryPath>$(LlvmSourceRoot)artifacts/install/lib/clang/$(ClangVersionMajor)/</ClangResourceDirectoryPath>
+
+        <!-- Package Info -->
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+        <Description>Clang's supporting resource files.</Description>
+        <!-- This package only contains unmodified Clang files so we only list LLVM Team as the author/copyright holder. -->
+        <Authors>LLVM Team</Authors>
+        <!-- LLVM does not have a good canonical copyright string. They're supposed to put it in their source file as part of Apache 2.0 but they don't. -->
+        <Copyright>LLVM copyright (c) 2003-2019 University of Illinois at Urbana-Champaign, LLVM Team.</Copyright>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="$(ClangLicensePath)" Link="LICENSE.txt" Pack="true" PackagePath="LICENSE.txt" Condition="Exists('$(ClangLicensePath)')" />
+        <None Include="$(ClangResourceDirectoryPath)**/*" LinkBase="clang-resources" Condition="Exists('$(ClangResourceDirectoryPath)')">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Pack>true</Pack>
+            <!--
+            We use MSBuild to copy the Clang resource directory to the build output of dependents using MSBuild instead of ContentFiles primarily to avoid having them pollute Solution Explorer:
+            https://github.com/NuGet/Home/issues/4856
+            -->
+            <PackagePath>clang-resources/</PackagePath>
+        </None>
+        <None Include="$(MSBuildProjectName).props">
+            <Pack>true</Pack>
+            <!--
+            buildTransitive is required to ensure the resource directory is also copied to indirect dependents
+            We put the props file in both build and buildTransitive for legacy compatibility even though we don't really expect legacy consumers. (IE: Visual Studio 2017)
+            NuGet will only use the one from buildTransitive when it's buildTransitive-aware.
+            https://github.com/NuGet/Home/wiki/Allow-package%2D-authors-to-define-build-assets-transitive-behavior
+            -->
+            <PackagePath>build/$(PackageId).props;buildTransitive/$(PackageId).props</PackagePath>
+        </None>
+    </ItemGroup>
+
+    <!-- Error if any of the required files are missing -->
+    <Target Name="_ClangResourceChecks" BeforeTargets="Build;Pack">
+        <Error Text="Clang LICENSE.TXT is missing, ensure Git submodules are up-to-date." Condition="!Exists('$(ClangLicensePath)')" />
+        <Error Text="Clang resource directory is missing." Condition="!Exists('$(ClangResourceDirectoryPath)')" />
+    </Target>
+</Project>
